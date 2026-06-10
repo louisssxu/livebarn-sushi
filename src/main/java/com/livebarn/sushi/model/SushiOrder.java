@@ -17,13 +17,13 @@ public class SushiOrder {
     @Column(name = "sushi_id")
     private Integer sushiId;
 
-    @Column(name = "createdAt")
+    @Column(name = "created_at")
     private Timestamp createdAt;
 
     public Integer getId() {return id;}
     public Integer getStatusId() {return statusId; }
     public  Integer getSushiId() {return sushiId; }
-    public  Timestamp getTimestamp() {return createdAt; }
+    public Timestamp getCreatedAt() {return createdAt; }
 
     public void setStatusId( Integer statusId ) {
         this.statusId = statusId;

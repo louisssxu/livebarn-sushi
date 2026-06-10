@@ -10,7 +10,7 @@ CREATE TABLE sushi_order (
                              id INT AUTO_INCREMENT PRIMARY KEY,
                              status_id INT NOT NULL,
                              sushi_id INT NOT NULL,
-                             createdAt TIMESTAMP NOT NULL default CURRENT_TIMESTAMP
+                             created_at TIMESTAMP NOT NULL default CURRENT_TIMESTAMP
 );
 
 DROP TABLE IF EXISTS status;
@@ -28,5 +28,6 @@ INSERT INTO status (name) VALUES
                               ('created'),
                               ('in-progress'),
                               ('paused'),
+                              ('resumed'),
                               ('finished'),
                               ('cancelled');
