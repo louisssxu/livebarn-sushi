@@ -64,9 +64,9 @@ Tests include unit tests (services, controller) and integration tests (full orde
 ## Order lifecycle
 
 ```
-created ──► in-progress ──► finished
-                │   ▲
-                ▼   │
+created   ──►   in-progress ──► finished
+                │        ▲
+                ▼        │
               paused ──► resumed ──► in-progress ──► finished
 ```
 
