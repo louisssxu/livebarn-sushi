@@ -6,7 +6,6 @@
 - Added a `resumed` status. Queue is FIFO within each group; `resumed` orders are served before `created` orders.
 - Cancel is not allowed on completed (`finished`) orders.
 - Analytics are in-memory (not persisted) and reflect normal kitchen load:
-  - `averageWaitTime` — seconds from `created` to `in-progress` when a chef starts cooking.
   - `averageMakeTime` — seconds from `in-progress` to `finished`, excluding orders paused while cooking.
 
 ## Overview
