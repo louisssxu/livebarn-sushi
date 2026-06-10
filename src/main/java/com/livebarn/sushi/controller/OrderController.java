@@ -1,6 +1,7 @@
 package com.livebarn.sushi.controller;
 
 
+import com.livebarn.sushi.dto.AnalyticsResponse;
 import com.livebarn.sushi.dto.ApiResponse;
 import com.livebarn.sushi.dto.CreateOrderRequest;
 import com.livebarn.sushi.dto.CreateOrderResponse;
@@ -41,6 +42,11 @@ public class OrderController {
     @GetMapping("/status")
     public ResponseEntity<OrdersByStatusResponse> getOrdersByStatus() {
         return ResponseEntity.ok(orderService.getOrdersByStatus());
+    }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<AnalyticsResponse> getAnalytics() {
+        return ResponseEntity.ok(orderService.getAnalytics());
     }
 
     @DeleteMapping("/{orderId}")

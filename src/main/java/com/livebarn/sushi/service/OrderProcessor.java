@@ -15,43 +15,42 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 public class OrderProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(OrderProcessor.class);
 
-    private final List<Chef> chefs = List.of(
-            new Chef(1),
-            new Chef(2),
-            new Chef(3)
-    );
+    private final List<Chef> chefs = IntStream.rangeClosed(1, Chef.COUNT)
+            .mapToObj(Chef::new)
+            .toList();
 
     private final LinkedList<Integer> pendingOrders = new LinkedList<>();
-    private final ReentrantLock queueLock = new ReentrantLock();
-    private final Condition orderAvailable = queueLock.newCondition();
+    private final Object lock = new Object();
     private int resumedInQueue = 0;
     private final ConcurrentHashMap<Integer, Integer> remainingSeconds = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Thread> cookingThreads = new ConcurrentHashMap<>();
     private final SushiOrderRepository orderRepository;
     private final SushiRepository sushiRepository;
     private final TransactionTemplate transactionTemplate;
+    private final AnalyticsService analyticsService;
     private ExecutorService executor;
 
     public OrderProcessor(
             SushiOrderRepository orderRepository,
             SushiRepository sushiRepository,
-            TransactionTemplate transactionTemplate
+            TransactionTemplate transactionTemplate,
+            AnalyticsService analyticsService
     ) {
         this.orderRepository = orderRepository;
         this.sushiRepository = sushiRepository;
         this.transactionTemplate = transactionTemplate;
+        this.analyticsService = analyticsService;
     }
 
     @PostConstruct
@@ -76,29 +75,22 @@ public class OrderProcessor {
     }
 
     public void enqueue(int orderId) {
-        queueLock.lock();
-        try {
+        synchronized (lock) {
             pendingOrders.addLast(orderId);
-            orderAvailable.signal();
-        } finally {
-            queueLock.unlock();
+            lock.notify();
         }
     }
 
     public void enqueuePriority(int orderId) {
-        queueLock.lock();
-        try {
+        synchronized (lock) {
             pendingOrders.add(resumedInQueue, orderId);
             resumedInQueue++;
-            orderAvailable.signal();
-        } finally {
-            queueLock.unlock();
+            lock.notify();
         }
     }
 
     public void removeFromQueue(int orderId) {
-        queueLock.lock();
-        try {
+        synchronized (lock) {
             int index = pendingOrders.indexOf(orderId);
             if (index >= 0) {
                 pendingOrders.remove(index);
@@ -106,8 +98,6 @@ public class OrderProcessor {
                     resumedInQueue--;
                 }
             }
-        } finally {
-            queueLock.unlock();
         }
     }
 
@@ -160,18 +150,15 @@ public class OrderProcessor {
     }
 
     private int takeNextOrder() throws InterruptedException {
-        queueLock.lock();
-        try {
+        synchronized (lock) {
             while (pendingOrders.isEmpty()) {
-                orderAvailable.await();
+                lock.wait();
             }
             int orderId = pendingOrders.removeFirst();
             if (resumedInQueue > 0) {
                 resumedInQueue--;
             }
             return orderId;
-        } finally {
-            queueLock.unlock();
         }
     }
 
@@ -192,6 +179,7 @@ public class OrderProcessor {
             return;
         }
 
+        analyticsService.chefBusyStart(chef.getId());
         cookingThreads.put(orderId, Thread.currentThread());
         log.info("Chef {} started order {} ({} seconds remaining)",
                 chef.getId(), orderId, remainingSeconds.get(orderId));
@@ -216,6 +204,7 @@ public class OrderProcessor {
                         order.setStatusId(OrderStatus.FINISHED);
                         orderRepository.save(order);
                         remainingSeconds.remove(orderId);
+                        analyticsService.recordOrderFinished(orderId);
                         log.info("Chef {} finished order {}", chef.getId(), orderId);
                     }
                 });
@@ -223,6 +212,7 @@ public class OrderProcessor {
         } catch (InterruptedException e) {
             Thread.interrupted();
         } finally {
+            analyticsService.chefBusyEnd(chef.getId());
             cookingThreads.remove(orderId);
         }
     }
@@ -248,6 +238,7 @@ public class OrderProcessor {
             order.setStatusId(OrderStatus.IN_PROGRESS);
             orderRepository.save(order);
             remainingSeconds.put(orderId, sushi.getTimeToMake());
+            analyticsService.recordCreatedToInProgress(orderId, order.getCreatedAt());
             return true;
         }
 

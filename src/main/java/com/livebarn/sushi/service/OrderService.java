@@ -1,5 +1,6 @@
 package com.livebarn.sushi.service;
 
+import com.livebarn.sushi.dto.AnalyticsResponse;
 import com.livebarn.sushi.dto.OrderMapper;
 import com.livebarn.sushi.dto.OrderResponse;
 import com.livebarn.sushi.dto.OrderStatusEntry;
@@ -25,15 +26,18 @@ public class OrderService {
     private final SushiRepository sushiRepository;
     private final SushiOrderRepository orderRepository;
     private final OrderProcessor orderProcessor;
+    private final AnalyticsService analyticsService;
 
     public OrderService(
             SushiRepository sushiRepository,
             SushiOrderRepository orderRepository,
-            OrderProcessor orderProcessor
+            OrderProcessor orderProcessor,
+            AnalyticsService analyticsService
     ) {
         this.sushiRepository = sushiRepository;
         this.orderRepository = orderRepository;
         this.orderProcessor = orderProcessor;
+        this.analyticsService = analyticsService;
     }
 
     @Transactional
@@ -49,6 +53,8 @@ public class OrderService {
         order.setCreatedAt(new Timestamp(System.currentTimeMillis()));
 
         SushiOrder savedOrder = orderRepository.save(order);
+
+        analyticsService.recordOrderCreated(sushiName, savedOrder.getCreatedAt());
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -80,6 +86,7 @@ public class OrderService {
 
         order.setStatusId(OrderStatus.CANCELLED);
         orderRepository.save(order);
+        analyticsService.recordOrderCancelled(orderId);
         return OrderActionResult.SUCCESS;
     }
 
@@ -97,6 +104,8 @@ public class OrderService {
         if (!orderProcessor.pauseActive(orderId)) {
             return OrderActionResult.INVALID_STATE;
         }
+
+        analyticsService.recordPaused(orderId, order.getStatusId());
 
         order.setStatusId(OrderStatus.PAUSED);
         orderRepository.save(order);
@@ -155,5 +164,9 @@ public class OrderService {
         }
 
         return new OrdersByStatusResponse(inProgress, created, paused, resumed, cancelled, completed);
+    }
+
+    public AnalyticsResponse getAnalytics() {
+        return analyticsService.getAnalytics();
     }
 }
