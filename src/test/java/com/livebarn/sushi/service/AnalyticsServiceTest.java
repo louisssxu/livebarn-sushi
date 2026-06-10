@@ -2,7 +2,6 @@ package com.livebarn.sushi.service;
 
 import com.livebarn.sushi.dto.AnalyticsResponse;
 import com.livebarn.sushi.model.Chef;
-import com.livebarn.sushi.model.OrderStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -111,14 +110,6 @@ class AnalyticsServiceTest {
         }
 
         @Test
-        void excludesWaitTimeWhenPausedWhileCreated() {
-            analyticsService.recordPaused(1, OrderStatus.CREATED);
-            analyticsService.recordCreatedToInProgress(1, millisAgo(5_000));
-
-            assertEquals(0.0, analyticsService.getAnalytics().averageWaitTime());
-        }
-
-        @Test
         void averagesMultipleWaitTimes() {
             analyticsService.recordCreatedToInProgress(1, millisAgo(2_000));
             analyticsService.recordCreatedToInProgress(2, millisAgo(4_000));
@@ -143,7 +134,7 @@ class AnalyticsServiceTest {
         @Test
         void excludesMakeTimeWhenPausedWhileInProgress() throws InterruptedException {
             analyticsService.recordCreatedToInProgress(1, millisAgo(1_000));
-            analyticsService.recordPaused(1, OrderStatus.IN_PROGRESS);
+            analyticsService.recordPaused(1);
             Thread.sleep(200);
             analyticsService.recordOrderFinished(1);
 
@@ -309,7 +300,7 @@ class AnalyticsServiceTest {
         @Test
         void pauseInProgressExcludesMakeTime() throws InterruptedException {
             analyticsService.recordCreatedToInProgress(1, millisAgo(2_000));
-            analyticsService.recordPaused(1, OrderStatus.IN_PROGRESS);
+            analyticsService.recordPaused(1);
             Thread.sleep(200);
             analyticsService.recordOrderFinished(1);
 

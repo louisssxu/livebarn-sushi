@@ -2,7 +2,6 @@ package com.livebarn.sushi.service;
 
 import com.livebarn.sushi.dto.AnalyticsResponse;
 import com.livebarn.sushi.model.Chef;
-import com.livebarn.sushi.model.OrderStatus;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -17,7 +16,6 @@ public class AnalyticsService {
 
     private final long serverStartMillis = System.currentTimeMillis();
     private final Object lock = new Object();
-    private final Set<Integer> pausedWhileCreated = ConcurrentHashMap.newKeySet();
     private final Set<Integer> pausedWhileInProgress = ConcurrentHashMap.newKeySet();
     private final Map<Integer, Long> chefBusyStartMillis = new ConcurrentHashMap<>();
 
@@ -43,20 +41,14 @@ public class AnalyticsService {
     public void recordCreatedToInProgress(int orderId, Timestamp createdAt) {
         double waitSeconds = (System.currentTimeMillis() - createdAt.getTime()) / 1000.0;
         synchronized (lock) {
-            if (!pausedWhileCreated.contains(orderId)) {
-                waitTimeSum += waitSeconds;
-                waitTimeCount++;
-            }
+            waitTimeSum += waitSeconds;
+            waitTimeCount++;
             makeTimeStartMillis.put(orderId, System.currentTimeMillis());
         }
     }
 
-    public void recordPaused(int orderId, int statusBeforePause) {
-        if (statusBeforePause == OrderStatus.CREATED) {
-            pausedWhileCreated.add(orderId);
-        } else if (statusBeforePause == OrderStatus.IN_PROGRESS) {
-            pausedWhileInProgress.add(orderId);
-        }
+    public void recordPaused(int orderId) {
+        pausedWhileInProgress.add(orderId);
     }
 
     public void recordOrderFinished(int orderId) {

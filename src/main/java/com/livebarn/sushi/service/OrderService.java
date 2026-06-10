@@ -105,7 +105,7 @@ public class OrderService {
             return OrderActionResult.INVALID_STATE;
         }
 
-        analyticsService.recordPaused(orderId, order.getStatusId());
+        analyticsService.recordPaused(orderId);
 
         order.setStatusId(OrderStatus.PAUSED);
         orderRepository.save(order);

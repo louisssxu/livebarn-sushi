@@ -253,7 +253,7 @@ class OrderServiceTest {
             assertEquals(OrderActionResult.SUCCESS, orderService.pauseOrder(1));
 
             assertEquals(OrderStatus.PAUSED, existing.getStatusId());
-            verify(analyticsService).recordPaused(1, OrderStatus.IN_PROGRESS);
+            verify(analyticsService).recordPaused(1);
             verify(orderRepository).save(existing);
         }
     }
