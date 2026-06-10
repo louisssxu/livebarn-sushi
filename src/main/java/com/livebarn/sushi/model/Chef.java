@@ -2,18 +2,12 @@ package com.livebarn.sushi.model;
 
 public class Chef {
     private final int id;
-    private final String name;
 
-    public Chef(int id, String name) {
+    public Chef(int id) {
         this.id = id;
-        this.name = name;
     }
 
     public int getId() {
         return id;
-    }
-
-    public String getName() {
-        return name;
     }
 }

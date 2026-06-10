@@ -28,9 +28,9 @@ public class OrderProcessor {
     private static final Logger log = LoggerFactory.getLogger(OrderProcessor.class);
 
     private final List<Chef> chefs = List.of(
-            new Chef(1, "Chef 1"),
-            new Chef(2, "Chef 2"),
-            new Chef(3, "Chef 3")
+            new Chef(1),
+            new Chef(2),
+            new Chef(3)
     );
 
     private final LinkedList<Integer> pendingOrders = new LinkedList<>();
@@ -194,7 +194,7 @@ public class OrderProcessor {
 
         cookingThreads.put(orderId, Thread.currentThread());
         log.info("Chef {} started order {} ({} seconds remaining)",
-                chef.getName(), orderId, remainingSeconds.get(orderId));
+                chef.getId(), orderId, remainingSeconds.get(orderId));
 
         try {
             while (hasRemainingTime(orderId)) {
@@ -216,7 +216,7 @@ public class OrderProcessor {
                         order.setStatusId(OrderStatus.FINISHED);
                         orderRepository.save(order);
                         remainingSeconds.remove(orderId);
-                        log.info("Chef {} finished order {}", chef.getName(), orderId);
+                        log.info("Chef {} finished order {}", chef.getId(), orderId);
                     }
                 });
             });
