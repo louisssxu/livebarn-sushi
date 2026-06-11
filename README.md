@@ -1,5 +1,8 @@
 # Sushi
 
+## DEMO
+https://livebarn-sushi-frontend-production.up.railway.app/
+
 ## Assumptions
 
 - Fixed typo in the SQL schema: `createdAt` → `created_at` on `sushi_order`.
