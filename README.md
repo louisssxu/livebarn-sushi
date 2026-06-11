@@ -1,6 +1,7 @@
 # Sushi
 
 ## DEMO
+Front-end not included in repo, only show usage of apis:
 https://livebarn-sushi-frontend-production.up.railway.app/
 
 ## Assumptions
